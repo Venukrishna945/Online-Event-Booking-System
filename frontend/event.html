@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Details</title>
+  <link rel="stylesheet" href="css1/style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f9;
+    }
+    
+    header {
+      background: #004aad;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    header h1 {
+      margin: 0;
+    }
+    
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 20px;
+    }
+    
+    nav a:hover {
+      text-decoration: underline;
+    }
+    
+    main {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    
+    .event-details-card {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    
+    .event-details-card h2 {
+      color: #333;
+      margin-top: 0;
+      border-bottom: 2px solid #004aad;
+      padding-bottom: 10px;
+    }
+    
+    #booking-section {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    #booking-section h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    #booking-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    #booking-form label {
+      font-weight: bold;
+      color: #333;
+    }
+    
+    #booking-form input {
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    
+    #booking-form button {
+      background: #004aad;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    #booking-form button:hover {
+      background: #003582;
+    }
+    
+    #booking-msg {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Event Details</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="events.html">Events</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main id="event-details">
+    <!-- Event details will be loaded here -->
+  </main>
+
+  <section id="booking-section" style="max-width: 800px; margin: 0 auto 40px; padding: 0 20px;">
+    <h3>Book This Event</h3>
+    <form id="booking-form">
+      <label for="userName">Full Name:</label>
+      <input type="text" id="userName" required>
+
+      <label for="userEmail">Email:</label>
+      <input type="email" id="userEmail" required>
+
+      <label for="ticketCount">Number of Tickets:</label>
+      <input type="number" id="ticketCount" min="1" max="10" value="1" required>
+
+      <button type="submit">Book Now</button>
+    </form>
+    <p id="booking-msg"></p>
+  </section>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const eventId = params.get('id');
+
+    if (!eventId) {
+      alert('No event specified. Redirecting to events page.');
+      window.location.href = 'events.html';
+    }
+
+    // Load event details
+    fetch(`http://localhost:5000/api/events/${eventId}`)
+      .then(res => res.json())
+      .then(event => {
+        const section = document.getElementById('event-details');
+        section.innerHTML = `
+          <div class="event-details-card">
+            <h2>${event.title}</h2>
+            <p><strong>Description:</strong> ${event.description || 'No description available'}</p>
+            <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+            <p><strong>Time:</strong> ${new Date(event.date).toLocaleTimeString()}</p>
+            <p><strong>Location:</strong> ${event.location}</p>
+            <p><strong>Available Seats:</strong> ${event.seats}</p>
+            <p><strong>Price:</strong> ₹${event.price || 'Free'}</p>
+            <p><strong>Status:</strong> ${event.status}</p>
+          </div>
+        `;
+      })
+      .catch(err => {
+        console.error('Error loading event:', err);
+        document.getElementById('event-details').innerHTML = '<p>Error loading event details.</p>';
+      });
+
+    // Handle booking form submission
+    document.getElementById('booking-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const userName = document.getElementById('userName').value;
+      const userEmail = document.getElementById('userEmail').value;
+      const ticketCount = parseInt(document.getElementById('ticketCount').value);
+
+      const bookingData = {
+        event_id: eventId,
+        user_name: userName,
+        user_email: userEmail,
+        tickets: ticketCount
+      };
+
+      // Check if user is logged in
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        bookingData.user_id = user.id;
+      }
+
+      fetch('http://localhost:5000/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
+      })
+      .then(res => res.json())
+      .then(data => {
+        const msgElement = document.getElementById('booking-msg');
+        if (data.success) {
+          msgElement.textContent = `Booking successful! Your ticket ID: ${data.ticket_id}`;
+          msgElement.className = 'success';
+          document.getElementById('booking-form').reset();
+        } else {
+          msgElement.textContent = data.message || 'Booking failed. Please try again.';
+          msgElement.className = 'error';
+        }
+      })
+      .catch(err => {
+        console.error('Booking error:', err);
+        document.getElementById('booking-msg').textContent = 'An error occurred. Please try again.';
+        document.getElementById('booking-msg').className = 'error';
+      });
+    });
+  </script>
+</body>
+</html>

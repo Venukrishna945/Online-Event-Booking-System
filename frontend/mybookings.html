@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Bookings - Event Booking Hub</title>
+  <link rel="stylesheet" href="css1/style.css" />
+  <style>
+    .bookings-container {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    
+    .bookings-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .booking-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border-left: 4px solid #004aad;
+    }
+    
+    .booking-card h3 {
+      margin: 0 0 10px;
+      color: #333;
+    }
+    
+    .booking-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .ticket-id {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-weight: bold;
+      color: #004aad;
+    }
+    
+    .no-bookings {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-size: 18px;
+    }
+    
+    .btn-download {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-download:hover {
+      background: #218838;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo-section">
+      <img src="https://cdn-icons-png.flaticon.com/128/9098/9098749.png" alt="Event" />
+      <h1>Event Booking Hub</h1>
+    </div>
+
+    <nav class="navbar" id="navbar">
+      <!-- Dynamic links will be injected here by JS -->
+    </nav>
+  </header>
+
+  <main>
+    <div class="bookings-container">
+      <div class="bookings-header">
+        <h2>My Bookings</h2>
+        <p>View all your event bookings and tickets</p>
+      </div>
+      
+      <div id="bookings-list">
+        <!-- Bookings will be loaded here -->
+      </div>
+    </div>
+  </main>
+
+  <footer style="text-align: center; padding: 20px; background: #333; color: white;">
+    <p>© 2025 Event Booking System | Your Event Journey</p>
+  </footer>
+
+  <script>
+    // ====== Dynamic Navbar Setup ======
+    const navbar = document.getElementById('navbar');
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    // Redirect if not logged in
+    if (!user) {
+      alert('Please login to view your bookings');
+      window.location.href = 'login.html';
+    }
+
+    function renderNavbar() {
+      let navHTML = '';
+
+      if (user.role === 'user') {
+        navHTML = `
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="mybookings.html" class="active">My Bookings</a>
+          <a href="#" id="logoutBtn">Logout</a>
+        `;
+      } else {
+        // Redirect if not a regular user
+        window.location.href = 'index.html';
+      }
+
+      navbar.innerHTML = navHTML;
+
+      // Logout functionality
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          localStorage.removeItem('user');
+          window.location.href = 'index.html';
+        });
+      }
+    }
+
+    renderNavbar();
+
+    // ====== Load User Bookings ======
+function loadMyBookings() {
+  console.log('Loading bookings for user:', user.id);
+  
+  fetch(`http://localhost:5000/api/bookings/user/${user.id}`)
+    .then(res => res.json())
+    .then(bookings => {
+      const bookingsList = document.getElementById('bookings-list');
+      
+      if (!bookings || bookings.length === 0) {
+        bookingsList.innerHTML = `
+          <div class="no-bookings">
+            <p>You haven't made any bookings yet.</p>
+            <p><a href="events.html" style="color: #004aad; text-decoration: none; font-weight: bold;">Browse Events</a> to book your first event!</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Fetch event details for each booking to get location
+      const bookingPromises = bookings.map(booking => 
+        fetch(`http://localhost:5000/api/events/${booking.event_id}`)
+          .then(res => res.json())
+          .then(event => ({
+            ...booking,
+            event_location: event.location || 'Location not available',
+            event_title: event.title || booking.event_title,
+            event_date: event.date || booking.event_date
+          }))
+          .catch(err => ({
+            ...booking,
+            event_location: 'Location not available'
+          }))
+      );
+
+      Promise.all(bookingPromises)
+        .then(bookingsWithDetails => {
+          bookingsList.innerHTML = bookingsWithDetails.map(booking => `
+            <div class="booking-card">
+              <h3>${booking.event_title}</h3>
+              <div class="booking-info">
+                <div>
+                  <strong>Date:</strong><br>
+                  ${new Date(booking.event_date).toLocaleDateString()}
+                </div>
+                <div>
+                  <strong>Location:</strong><br>
+                  ${booking.event_location}
+                </div>
+                <div>
+                  <strong>Tickets:</strong><br>
+                  ${booking.tickets}
+                </div>
+                <div>
+                  <strong>Booking Date:</strong><br>
+                  ${new Date(booking.booking_date).toLocaleDateString()}
+                </div>
+              </div>
+              <div class="ticket-id">
+                Ticket ID: ${booking.ticket_id}
+              </div>
+              <button class="btn-download" onclick="downloadTicket('${booking.ticket_id}', '${booking.event_title}', '${booking.event_date}', '${booking.event_location}')">
+                Download Ticket
+              </button>
+            </div>
+          `).join('');
+        });
+    })
+    .catch(err => {
+      console.error('Error loading bookings:', err);
+      document.getElementById('bookings-list').innerHTML = '<p>Error loading bookings. Please try again later.</p>';
+    });
+}
+    function downloadTicket(ticketId, eventTitle, eventDate, eventLocation) {
+      const ticketContent = `
+        EVENT TICKET - Event Booking Hub
+        ================================
+        
+        Ticket ID: ${ticketId}
+        Event: ${eventTitle}
+        Date: ${eventDate ? new Date(eventDate).toLocaleDateString() : 'Date not available'}
+        Location: ${eventLocation}
+        
+        Please present this ticket at the event entrance.
+        
+        Thank you for booking with Event Booking Hub!
+        
+        Contact: support@eventbookinghub.com
+      `;
+      
+      const blob = new Blob([ticketContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ticket-${ticketId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Load bookings when page loads
+    loadMyBookings();
+  </script>
+</body>
+</html>

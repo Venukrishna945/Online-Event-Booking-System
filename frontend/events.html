@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All Events - Event Booking Hub</title>
+  <link rel="stylesheet" href="css1/style.css" />
+  <style>
+    .events-header {
+      text-align: center;
+      margin: 30px 0;
+    }
+    
+    .search-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    
+    .search-container input {
+      width: 60%;
+      padding: 12px 20px;
+      border: 2px solid #ddd;
+      border-radius: 25px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    
+    .search-container input:focus {
+      border-color: #004aad;
+    }
+    
+    .event-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 25px;
+      padding: 20px;
+    }
+    
+    .event-card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .event-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .event-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    
+    .event-info {
+      padding: 20px;
+    }
+    
+    .event-info h3 {
+      margin: 0 0 10px;
+      color: #333;
+      font-size: 1.3rem;
+    }
+    
+    .event-info p {
+      margin: 8px 0;
+      color: #555;
+      font-size: 14px;
+    }
+    
+    .event-price {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #004aad;
+      margin: 15px 0;
+    }
+    
+    .btn-book {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: #004aad;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-align: center;
+      text-decoration: none;
+    }
+    
+    .btn-book:hover {
+      background: #003582;
+    }
+    
+    .no-events {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo-section">
+      <img src="https://cdn-icons-png.flaticon.com/128/9098/9098749.png" alt="Event" />
+      <h1>Event Booking Hub</h1>
+    </div>
+
+    <nav class="navbar" id="navbar">
+      <!-- Dynamic links will be injected here by JS -->
+    </nav>
+
+    
+  </header>
+
+  <main>
+    <section class="events-header">
+      <h2>All Upcoming Events</h2>
+      <p>Discover amazing events happening near you</p>
+    </section>
+
+    <div class="search-container">
+      <input type="text" id="eventsSearch" placeholder="Search events by name, location, or description...">
+    </div>
+
+    <div id="events-list" class="event-container">
+      <!-- Events will be loaded dynamically here -->
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 Event Booking System | Discover Your Next Experience</p>
+  </footer>
+
+  <script>
+    // ====== Dynamic Navbar Setup ======
+    const navbar = document.getElementById('navbar');
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    function renderNavbar() {
+      let navHTML = '';
+
+      if (!user) {
+        // Guest view
+        navHTML = `
+          <a href="index.html">Home</a>
+          <a href="events.html" class="active">Events</a>
+          <a href="login.html">Login</a>
+          <a href="register.html">Register</a>
+        `;
+      } else if (user.role === 'user') {
+        // Logged-in user
+        navHTML = `
+          <a href="index.html">Home</a>
+          <a href="events.html" class="active">Events</a>
+          <a href="mybookings.html">My Bookings</a>
+          <a href="#" id="logoutBtn">Logout</a>
+        `;
+      } else if (user.role === 'organizer') {
+        // Organizer view
+        navHTML = `
+          <a href="index.html">Home</a>
+          <a href="events.html" class="active">Events</a>
+          <a href="organizer.html">My Dashboard</a>
+          <a href="#" id="logoutBtn">Logout</a>
+        `;
+      } else if (user.role === 'admin') {
+        // Admin view
+        navHTML = `
+          <a href="index.html">Home</a>
+          <a href="events.html" class="active">Events</a>
+          <a href="admin.html">Dashboard</a>
+          <a href="#" id="logoutBtn">Logout</a>
+        `;
+      }
+
+      navbar.innerHTML = navHTML;
+
+      // Logout functionality
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          localStorage.removeItem('user');
+          window.location.href = 'index.html';
+        });
+      }
+    }
+
+    renderNavbar();
+
+    // ====== Load All Events ======
+    function loadEvents() {
+      fetch('http://localhost:5000/api/events')
+        .then(res => res.json())
+        .then(events => {
+          const eventsList = document.getElementById('events-list');
+          
+          if (!events || events.length === 0) {
+            eventsList.innerHTML = '<div class="no-events">No events found. Check back later!</div>';
+            return;
+          }
+          
+          eventsList.innerHTML = events.map(event => `
+            <div class="event-card">
+              <img src="${event.image || 'https://tse1.mm.bing.net/th/id/OIP.Mxu-B81IdWPuMBiXAlP0cgHaCP?pid=Api&P=0&h=180'}" alt="${event.title}" />
+              <div class="event-info">
+                <h3>${event.title}</h3>
+                <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+                <p><strong>Time:</strong> ${new Date(event.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                <p><strong>Location:</strong> ${event.location}</p>
+                <p>${event.description ? (event.description.length > 100 ? event.description.substring(0, 100) + '...' : event.description) : 'No description available'}</p>
+                <div class="event-price">₹${event.price || 'Free'}</div>
+                <a href="booking.html?eventId=${event.id}" class="btn-book">Book Now</a>
+              </div>
+            </div>
+          `).join('');
+        })
+        .catch(err => {
+          console.error('Error loading events:', err);
+          document.getElementById('events-list').innerHTML = '<div class="no-events">Error loading events. Please try again later.</div>';
+        });
+    }
+
+    // ====== Event Search ======
+    document.getElementById('eventsSearch').addEventListener('input', function(e) {
+      const term = e.target.value.toLowerCase();
+      const cards = document.querySelectorAll('.event-card');
+      
+      cards.forEach(card => {
+        const title = card.querySelector('h3').textContent.toLowerCase();
+        const location = card.querySelector('p:nth-child(4)').textContent.toLowerCase();
+        const description = card.querySelector('p:nth-child(5)').textContent.toLowerCase();
+        
+        const matches = title.includes(term) || location.includes(term) || description.includes(term);
+        card.style.display = matches ? 'block' : 'none';
+      });
+    });
+
+    // Load events when page loads
+    loadEvents();
+  </script>
+</body>
+</html>

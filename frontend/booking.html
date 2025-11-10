@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Event - Event Booking Hub</title>
+  <link rel="stylesheet" href="css1/style.css" />
+  <style>
+    .booking-container {
+      max-width: 500px;
+      margin: 50px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .booking-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .booking-header h2 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .event-info {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      border-left: 4px solid #004aad;
+    }
+
+    .event-info h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+      border-color: #004aad;
+      outline: none;
+    }
+
+    .btn-book {
+      width: 100%;
+      padding: 15px;
+      background: #004aad;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btn-book:hover {
+      background: #003582;
+    }
+
+    .btn-book:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .booking-message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .ticket-preview {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      margin-top: 25px;
+      display: none;
+    }
+
+    .ticket-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .ticket-details {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .ticket-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .ticket-id {
+      text-align: center;
+      padding: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin: 15px 0;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 10px;
+      display: none;
+    }
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #004aad;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo-section">
+      <img src="https://cdn-icons-png.flaticon.com/128/9098/9098749.png" alt="Event" />
+      <h1>Event Booking Hub</h1>
+    </div>
+
+    <nav class="navbar" id="navbar">
+      <!-- Dynamic links will be injected here by JS -->
+    </nav>
+  </header>
+
+  <main>
+    <div class="booking-container">
+      <div class="booking-header">
+        <h2>Book Your Event</h2>
+        <p>Fill in your details to confirm booking</p>
+      </div>
+
+      <div class="event-info" id="eventInfo">
+        <h3>Event Details</h3>
+        <p><strong>Event:</strong> <span id="eventName">Loading...</span></p>
+        <p><strong>Date:</strong> <span id="eventDate">Loading...</span></p>
+        <p><strong>Location:</strong> <span id="eventLocation">Loading...</span></p>
+        <p><strong>Available Seats:</strong> <span id="eventSeats">Loading...</span></p>
+      </div>
+
+      <form id="bookingForm">
+        <div class="form-group">
+          <label for="userName">Full Name *</label>
+          <input type="text" id="userName" placeholder="Enter your full name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="userEmail">Email Address *</label>
+          <input type="email" id="userEmail" placeholder="Enter your email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="ticketCount">Number of Tickets *</label>
+          <input type="number" id="ticketCount" min="1" max="10" value="1" required>
+        </div>
+
+        <button type="submit" class="btn-book" id="bookBtn">
+          Confirm Booking
+        </button>
+
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p>Processing your booking...</p>
+        </div>
+      </form>
+
+      <div id="bookingMessage" class="booking-message"></div>
+
+      <div class="ticket-preview" id="ticketPreview">
+        <div class="ticket-header">
+          <h3> Booking Confirmed!</h3>
+          <p>Your ticket has been generated</p>
+        </div>
+
+        <div class="ticket-details">
+          <div class="ticket-item">
+            <span>Event:</span>
+            <span id="ticketEventName">-</span>
+          </div>
+          <div class="ticket-item">
+            <span>Date:</span>
+            <span id="ticketDate">-</span>
+          </div>
+          <div class="ticket-item">
+            <span>Location:</span>
+            <span id="ticketLocation">-</span>
+          </div>
+          <div class="ticket-item">
+            <span>Ticket Holder:</span>
+            <span id="ticketHolder">-</span>
+          </div>
+          <div class="ticket-item">
+            <span>Tickets:</span>
+            <span id="ticketQuantity">-</span>
+          </div>
+        </div>
+
+        <div class="ticket-id" id="ticketId">
+          TICKET-ID
+        </div>
+
+        <p style="text-align: center; font-size: 14px; opacity: 0.8;">
+          Present this ticket ID at the event entrance
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <footer style="text-align: center; padding: 20px; background: #333; color: white;">
+    <p>© 2025 Event Booking System</p>
+  </footer>
+
+  <script>
+    // Dynamic Navbar Setup 
+    const navbar = document.getElementById('navbar');
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    function renderNavbar() {
+      let navHTML = '';
+
+      if (!user) {
+        navHTML = `
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="login.html">Login</a>
+          <a href="register.html">Register</a>
+        `;
+      } else if (user.role === 'user') {
+        navHTML = `
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="mybookings.html">My Bookings</a>
+          <a href="#" id="logoutBtn">Logout</a>
+        `;
+      } else if (user.role === 'organizer') {
+        navHTML = `
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="organizer.html">My Dashboard</a>
+          <a href="#" id="logoutBtn">Logout</a>
+        `;
+      } else if (user.role === 'admin') {
+        navHTML = `
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="admin.html">Dashboard</a>
+          <a href="#" id="logoutBtn">Logout</a>
+        `;
+      }
+
+      navbar.innerHTML = navHTML;
+
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          localStorage.removeItem('user');
+          window.location.href = 'index.html';
+        });
+      }
+    }
+
+    renderNavbar();
+
+    // Get Event ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('eventId');
+    
+    if (!eventId) {
+      alert('No event specified. Redirecting to events page.');
+      window.location.href = 'events.html';
+    }
+
+    let currentEvent = null;
+
+    // ====== Load Event Details ======
+    function loadEventDetails() {
+      fetch(`http://localhost:5000/api/events/${eventId}`)
+        .then(res => res.json())
+        .then(event => {
+          if (!event) {
+            throw new Error('Event not found');
+          }
+          currentEvent = event;
+          displayEventDetails(event);
+          
+          // Pre-fill form if user is logged in
+          if (user) {
+            document.getElementById('userName').value = user.name || '';
+            document.getElementById('userEmail').value = user.email || '';
+          }
+        })
+        .catch(err => {
+          console.error('Error loading event:', err);
+          document.getElementById('eventInfo').innerHTML = '<p>Error loading event details</p>';
+          document.getElementById('bookBtn').disabled = true;
+        });
+    }
+
+    function displayEventDetails(event) {
+      document.getElementById('eventName').textContent = event.title;
+      document.getElementById('eventDate').textContent = new Date(event.date).toLocaleDateString();
+      document.getElementById('eventLocation').textContent = event.location;
+      document.getElementById('eventSeats').textContent = event.seats;
+      
+      // Set max tickets based on available seats
+      document.getElementById('ticketCount').max = event.seats;
+    }
+// Handle Booking Form Submission
+document.getElementById('bookingForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const userName = document.getElementById('userName').value.trim();
+  const userEmail = document.getElementById('userEmail').value.trim();
+  const ticketCount = parseInt(document.getElementById('ticketCount').value);
+
+  // Validation
+  if (!userName || !userEmail || !ticketCount) {
+    showMessage('Please fill in all fields', 'error');
+    return;
+  }
+
+  if (ticketCount > currentEvent.seats) {
+    showMessage(`Only ${currentEvent.seats} seats available`, 'error');
+    return;
+  }
+
+  // Show loading
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('bookBtn').disabled = true;
+
+  // Prepare booking data
+  const bookingData = {
+    event_id: eventId,
+    user_name: userName,
+    user_email: userEmail,
+    tickets: ticketCount
+  };
+
+  // Add user ID if logged in
+  const loggedInUser = JSON.parse(localStorage.getItem('user'));
+  if (loggedInUser) {
+    bookingData.user_id = loggedInUser.id;
+  }
+
+  // Submit booking
+  fetch('http://localhost:5000/api/bookings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bookingData)
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('bookBtn').disabled = false;
+
+    if (data.success) {
+      showMessage(`Booking successful! Your ticket ID: ${data.ticket_id}`, 'success');
+      generateTicket(data.ticket_id, userName, data.tickets || ticketCount);
+      document.getElementById('bookingForm').reset();
+    } else {
+      showMessage(data.message || 'Booking failed', 'error');
+    }
+  })
+  .catch(err => {
+    console.error('Booking error:', err);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('bookBtn').disabled = false;
+    showMessage('Network error. Please try again.', 'error');
+  });
+});
+
+    function showMessage(message, type) {
+      const messageEl = document.getElementById('bookingMessage');
+      messageEl.textContent = message;
+      messageEl.className = `booking-message ${type}`;
+    }
+
+    function generateTicket(ticketId, userName, ticketCount) {
+      // Display ticket details
+      document.getElementById('ticketEventName').textContent = currentEvent.title;
+      document.getElementById('ticketDate').textContent = new Date(currentEvent.date).toLocaleDateString();
+      document.getElementById('ticketLocation').textContent = currentEvent.location;
+      document.getElementById('ticketHolder').textContent = userName;
+      document.getElementById('ticketQuantity').textContent = ticketCount;
+      document.getElementById('ticketId').textContent = ticketId;
+
+      // Show ticket preview
+      document.getElementById('ticketPreview').style.display = 'block';
+
+      // Update available seats
+      currentEvent.seats -= ticketCount;
+      document.getElementById('eventSeats').textContent = currentEvent.seats;
+      document.getElementById('ticketCount').max = currentEvent.seats;
+    }
+
+    // Load event details on page load
+    loadEventDetails();
+    
+  </script>
+</body>
+</html>
